@@ -7,6 +7,11 @@ const TodoInput = ({ todo, setTodo, addTodo, category, setCategory, error }) => 
       <input
         value={todo}
         onChange={(e) => setTodo(e.target.value)}
+        onKeyDown={(e) => {
+          if(e.key === "ENTER") {
+            addTodo();
+          }
+        }}
         type="text"
         placeholder="Add a new task..."
         className={error.todo ? "input error" : "input"}
@@ -17,11 +22,6 @@ const TodoInput = ({ todo, setTodo, addTodo, category, setCategory, error }) => 
         placeholder="Enter category"
         value={category}
         onChange={(e) => setCategory(e.target.value)}
-        onKeyDown={(e) => {
-          if(e.key === "ENTER") {
-            addTodo();
-          }
-        }}
         className={error.category ? "input error" : "input"}
         
       />
