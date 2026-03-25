@@ -8,7 +8,7 @@ const TodoInput = ({ todo, setTodo, addTodo, category, setCategory, error }) => 
         value={todo}
         onChange={(e) => setTodo(e.target.value)}
         onKeyDown={(e) => {
-          if(e.key === "ENTER") {
+          if(e.key === "Enter") {
             addTodo();
           }
         }}
