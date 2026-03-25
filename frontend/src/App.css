@@ -1,0 +1,194 @@
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial, Helvetica, sans-serif;
+}
+
+body{
+background:#111;
+color:white;
+}
+
+.navbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:20px 40px;
+background:#1e1e1e;
+}
+
+.logo{
+font-size:24px;
+font-weight:bold;
+color:#4cafef;
+}
+
+.menu{
+display:flex;
+gap:30px;
+list-style:none;
+}
+
+.menu li{
+cursor:pointer;
+}
+
+.nav-actions button{
+margin-left:10px;
+padding:8px 14px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+.signup{
+background:#4cafef;
+color:white;
+}
+
+.settings{
+background:#333;
+color:white;
+}
+
+.container{
+max-width:700px;
+margin:auto;
+padding:40px;
+}
+
+h1{
+text-align:center;
+margin-bottom:20px;
+}
+.delete {
+  background: none;
+  cursor: pointer;
+}
+
+.todo-input{
+display:flex;
+gap:10px;
+}
+
+.todo-input input{
+flex:1;
+padding:10px;
+border-radius:6px;
+border:none;
+}
+.searchInput {
+flex:1;
+padding:10px;
+border-radius:6px;
+border:none;
+}
+
+.todo-input button{
+padding:10px 16px;
+border:none;
+background:#4cafef;
+color:white;
+border-radius:6px;
+cursor: pointer;
+transition: 0.3s ease-out;
+}
+.todo-input button:hover {
+  transform: scale(1.05);
+}
+
+.filters{
+display:flex;
+justify-content:center;
+gap:15px;
+margin:20px 0;
+}
+.todo-section {
+  margin-top: 15px;
+}
+
+
+
+.filters button{
+padding:6px 14px;
+border:none;
+border-radius:5px;
+background:#333;
+color:white;
+cursor: pointer;
+}
+.filters button:focus, .filters button:hover {
+  background-color: white;
+  color: black;
+}
+
+.todo-list{
+list-style:none;
+}
+
+
+
+.todo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #1a1a1a;
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.todo-item .left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.category-filter {
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #2a2a2a;
+  color: white;
+  border: 1px solid #444;
+  outline: none;
+  cursor: pointer;
+  margin-bottom: 12px; /* 👈 gap control */
+}
+.todo-item .right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+
+.category-badge {
+  background: linear-gradient(45deg, #1e90ff, #00c6ff);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: white;
+}
+.todo-item.completed span{
+text-decoration:line-through;
+opacity:0.6;
+}
+
+.actions button{
+margin-left:10px;
+border:none;
+background:transparent;
+color:white;
+cursor:pointer;
+}
+
+.input {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  outline: none;
+}
+
+.input.error {
+  border: 2px solid red; /* 🔥 RED BORDER */
+}
