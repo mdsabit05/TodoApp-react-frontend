@@ -4,6 +4,11 @@ import Navbar from "./components/Navbar";
 import TodoInput from "./components/TodoInput";
 import TodoList from "./components/TodoList";
 import { API } from "./API";
+// import { parseSync } from "vite";
+import Login from "./pages/Login";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Register from "./pages/Register";
+import { Navigate } from "react-router-dom";
 
 function App() {
   const [todo, setTodo] = useState("");
@@ -12,95 +17,176 @@ function App() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [category, setCategory] = useState("general");
+  const [fetchloading, setfetchLoading] = useState(false);
+  const [addloading, setaddLoading] = useState(false);
+  const [deleteloading, setdeleteLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const categories = [
     "all",
-    ...new Set(todos.map((t) => t.category || "general")),
+    ...new Set(todos.map((t) => t.category || "")),
   ];
   const [error, setError] = useState({
     todo: false,
     category: false,
   });
+  const [apiError, setApiError] = useState("");
 
-  // const addTodo = async () => {
-  //   if (todo.trim() === "" || category.trim() === "") return;
+  const PrivateRoute = ({ children }) => {
+    const token = localStorage.getItem("token");
 
-  //   try {
-  //     const res = await API.post("/api/todos", {
-  //       text: todo,
-  //       completed: false,
-  //       category: category.toLowerCase(),
-  //     });
+    return token ? children : <Navigate to="/login" />;
+  };
 
-  //     setTodos([...todos, res.data]);
-  //     setTodo("");
-  //     setCategory("general");
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  // };
   const addTodo = async () => {
-    let hasError = false;
+  setaddLoading(true);
+  setApiError("");
 
-    if (todo.trim() === "") {
-      setError((prev) => ({ ...prev, todo: true }));
-      hasError = true;
-    }
+  let hasError = false;
 
-    if (category.trim() === "") {
-      setError((prev) => ({ ...prev, category: true }));
-      hasError = true;
-    }
+  if (todo.trim() === "") {
+    setError((prev) => ({ ...prev, todo: true }));
+    hasError = true;
+  }
 
-    if (hasError) return;
+  if (category.trim() === "") {
+    setError((prev) => ({ ...prev, category: true }));
+    hasError = true;
+  }
 
-    try {
-      const res = await API.post("/api/todos", {
+  if (hasError) {
+    setaddLoading(false);
+    return;
+  }
+
+  const token = localStorage.getItem("token");
+
+  try {
+    if (!token) {   // guest
+      const newTodo = {
+        _id: Date.now(),
         text: todo,
         completed: false,
         category: category.toLowerCase(),
-      });
+      };
 
-      setTodos([...todos, res.data]);
+      const guestTodos =
+        JSON.parse(localStorage.getItem("guestTodos")) || [];
+
+      const updated = [...guestTodos, newTodo];
+
+      localStorage.setItem("guestTodos", JSON.stringify(updated));
+
+      setTodos(updated);
       setTodo("");
-      setCategory("");
+      setCategory("general");
 
-      // reset error
       setError({ todo: false, category: false });
-    } catch (err) {
-      console.log(err);
+      return;
     }
-  };
-  const toggleTodo = (index) => {
-    const updtaeTodo = todos.map((todo, i) => {
-      if (index == i) {
-        return { ...todo, completed: !todo.completed };
-      }
-      return todo;
+
+    const res = await API.post("/api/todos", {   //login
+      text: todo,
+      completed: false,
+      category: category.toLowerCase(),
     });
-    setTodos(updtaeTodo);
-  };
-  const deleteTodo = async (id) => {
-    try {
-      await API.delete(`/api/todos/${id}`);
-      setTodos(todos.filter((todo) => todo._id !== id));
-    } catch (err) {
-      console.log(err);
+
+    setTodos([...todos, res.data]);
+    setTodo("");
+    setCategory("general");
+
+    setError({ todo: false, category: false });
+
+  } catch (err) {
+    setApiError("Failed to add todo");
+  } finally {
+    setaddLoading(false);
+  }
+};
+const toggleTodo = async (id, currentStatus) => {
+  const token = localStorage.getItem("token");
+
+  try {
+
+    if (!token) {   //guest
+      const guestTodos =
+        JSON.parse(localStorage.getItem("guestTodos")) || [];
+
+      const updated = guestTodos.map((t) =>
+        t._id === id ? { ...t, completed: !currentStatus } : t
+      );
+
+      localStorage.setItem("guestTodos", JSON.stringify(updated));
+      setTodos(updated);
+      return; 
     }
-  };
+
+    const res = await API.put(`/api/todos/${id}`, {  //login
+      completed: !currentStatus,
+    });
+
+    setTodos(todos.map((t) => (t._id === id ? res.data : t)));
+
+  } catch (err) {
+    console.log("Toggle failed");
+  }
+};
+ const deleteTodo = async (id) => {
+  setdeleteLoading(true);
+  setApiError("");
+
+  const token = localStorage.getItem("token");
+
+  try {
+
+    if (!token) { // guest
+      const guestTodos =
+        JSON.parse(localStorage.getItem("guestTodos")) || [];
+
+      const updated = guestTodos.filter((todo) => todo._id !== id);
+
+      localStorage.setItem("guestTodos", JSON.stringify(updated));
+      setTodos(updated);
+      return; 
+    }
+
+    await API.delete(`/api/todos/${id}`);  //login
+    setTodos(todos.filter((todo) => todo._id !== id));
+
+  } catch (err) {
+    setApiError("Failed to delete todo");
+  } finally {
+    setdeleteLoading(false);
+  }
+};
   useEffect(() => {
     getTodo();
   }, []);
 
   // Fetching todo
-  const getTodo = async () => {
-    try {
-      const res = await API.get("/api/todos");
-      setTodos(res.data.data || res.data);
-    } catch (err) {
-      console.log(err);
+const getTodo = async () => {
+  setfetchLoading(true);
+  setApiError("");
+
+  const token = localStorage.getItem("token");
+
+  try {
+    if (!token) {  //guest
+      const guestTodos =
+        JSON.parse(localStorage.getItem("guestTodos")) || [];
+
+      setTodos(guestTodos);
+      return; 
     }
-  };
+
+    const res = await API.get("/api/todos"); // login
+    setTodos(res.data.data || res.data);
+
+  } catch (err) {
+    setApiError("Failed to load Todo");
+  } finally {
+    setfetchLoading(false);
+  }
+};
   const showTodo = todos.filter((todo) => {
     const filterTodo = () => {
       if (filter === "completed") return todo.completed;
@@ -127,10 +213,9 @@ function App() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  return (
-    <>
+
+  const HomeUI = (
       <div className="app">
-        <Navbar />
         <main className="container">
           <h1>My Todo List</h1>
           <TodoInput
@@ -140,6 +225,7 @@ function App() {
             category={category}
             setCategory={setCategory}
             error={error}
+            addLoading={addloading}
           />
           <div className="filters">
             <input
@@ -155,7 +241,11 @@ function App() {
             <button onClick={() => setFilter("active")}>Active</button>
             <button onClick={() => setFilter("completed")}>Completed</button>
           </div>
+
           <div className="todo-section">
+            {fetchloading && <p>Fetching todos...</p>}
+            {deleteloading && <p>Deleting...</p>}
+            {apiError && <p style={{ color: "red" }}>{apiError}</p>}
             <select
               className="category-filter"
               value={categoryFilter}
@@ -167,7 +257,6 @@ function App() {
                 </option>
               ))}
             </select>
-
             <TodoList
               todos={showTodo}
               deleteTodo={deleteTodo}
@@ -176,6 +265,25 @@ function App() {
           </div>
         </main>
       </div>
+      );
+
+  return (
+    <>
+      <BrowserRouter>
+        <Navbar HomeUI={HomeUI}/>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/"
+            element={
+              <PrivateRoute>
+                {HomeUI}
+              </PrivateRoute>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
     </>
   );
 }
