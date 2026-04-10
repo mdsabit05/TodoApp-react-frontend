@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 const Navbar = ({ HomeUI }) => {
   const navigate = useNavigate();
   const logout = () => {
-    localStorage.removeItem("token"); // 🔥 token delete
-    navigate("/login"); // 🔥 redirect
+    localStorage.removeItem("token"); 
+    navigate("/login"); 
   };
   const isLoggedIn = localStorage.getItem("token");
   return (
