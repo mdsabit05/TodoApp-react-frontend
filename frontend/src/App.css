@@ -192,3 +192,58 @@ cursor:pointer;
 .input.error {
   border: 2px solid red; /* 🔥 RED BORDER */
 }
+.auth-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #0f172a;
+}
+
+.auth-card {
+  background: #1e293b;
+  padding: 30px;
+  border-radius: 12px;
+  width: 300px;
+  text-align: center;
+}
+
+.auth-card h2 {
+  color: white;
+  margin-bottom: 20px;
+}
+
+.auth-card input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 6px;
+  border: none;
+  outline: none;
+}
+
+.auth-card button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.auth-card button:disabled {
+  background: gray;
+}
+
+.auth-card span {
+  color: #3b82f6;
+  cursor: pointer;
+}
+
+.error {
+  color: red;
+  font-size: 14px;
+}
