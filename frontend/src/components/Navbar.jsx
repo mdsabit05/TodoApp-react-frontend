@@ -1,13 +1,15 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-const Navbar = ({ HomeUI }) => {
+const Navbar = () => {
   const navigate = useNavigate();
   const logout = () => {
-    localStorage.removeItem("token"); 
-    navigate("/login"); 
+    localStorage.removeItem("token");
+    localStorage.removeItem("guestTodos"); 
+     window.location.reload();
+    // navigate("/"); 
   };
-  const isLoggedIn = localStorage.getItem("token");
+  const isLoggedIn = !!localStorage.getItem("token");
   return (
     <nav className="navbar">
       <div className="logo">TaskFlow</div>

@@ -30,6 +30,11 @@ const TodoInput = ({
         value={category}
         onChange={(e) => setCategory(e.target.value)}
         className={error.category ? "input error" : "input"}
+         onKeyDown={(e) => {
+          if (e.key === "Enter" && todo.trim() !== "") {
+            addTodo();
+          }
+        }}
       />
 
       <button onClick={addTodo} disabled={addLoading}> 
