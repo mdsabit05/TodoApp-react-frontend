@@ -5,17 +5,9 @@ import Navbar from "./components/Navbar";
 import TodoInput from "./components/TodoInput";
 import TodoList from "./components/TodoList";
 import { API } from "./API";
-// import { parseSync } from "vite";
 import Login from "./pages/Login";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Register from "./pages/Register";
-import { Navigate } from "react-router-dom";
-
-const PrivateRoute = ({ children }) => {
-  const token = localStorage.getItem("token");
-
-  return token ? children : <Navigate to="/login" />;
-};
 
 function App() {
   const [todo, setTodo] = useState("");
@@ -28,7 +20,10 @@ function App() {
   const [addloading, setaddLoading] = useState(false);
   const [deleteloading, setdeleteLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const categories = ["all", ...new Set(todos.map((t) => t.category || ""))];
+  const categories = [
+    "all",
+    ...new Set(todos.filter(Boolean).map((t) => t.category || "")),
+  ];
   const [error, setError] = useState({
     todo: false,
     category: false,
@@ -100,31 +95,44 @@ function App() {
       setaddLoading(false);
     }
   };
-  const toggleTodo = async (id, currentStatus) => {
+
+  const isValidMongoId = (id) => {
+    return typeof id === "string" && id.length === 24;
+  };
+
+  const toggleTodo = async (id, checked) => {
     const token = localStorage.getItem("token");
 
+    if (!token || !isValidMongoId(id)) {
+      console.log("Guest toggle:", id);
+
+      const guestTodos = JSON.parse(localStorage.getItem("guestTodos")) || [];
+
+      const updated = guestTodos.map((t) =>
+        String(t._id) === String(id) ? { ...t, completed: checked } : t,
+      );
+
+      localStorage.setItem("guestTodos", JSON.stringify(updated));
+      setTodos(updated);
+      return;
+    }
+
     try {
-      if (!token) {
-        //guest
-        const guestTodos = JSON.parse(localStorage.getItem("guestTodos")) || [];
-
-        const updated = guestTodos.map((t) =>
-          t._id === id ? { ...t, completed: !currentStatus } : t,
-        );
-
-        localStorage.setItem("guestTodos", JSON.stringify(updated));
-        setTodos(updated);
-        return;
-      }
-
-      const res = await API.put(`/api/todos/${id}`, {
-        //login
-        completed: !currentStatus,
+      const res = await API.put(`/api/todos/${id}/toggle`, {
+        completed: checked,
       });
-
-      setTodos(todos.map((t) => (t._id === id ? res.data : t)));
+setTodos((prev) =>
+  prev.map((t) =>
+    t._id === id
+      ? {
+          ...res.data,
+          completed: !!res.data.completed_at   // 🔥 fix
+        }
+      : t
+  )
+);
     } catch (err) {
-      console.log("Toggle failed");
+      console.log("Toggle failed:", err.response?.data || err.message);
     }
   };
   const deleteTodo = async (id) => {
@@ -173,8 +181,14 @@ function App() {
         return;
       }
 
-      const res = await API.get("/api/todos"); // login
-      setTodos(res.data.data || res.data);
+      const res = await API.get("/api/todos");
+
+const normalized = (res.data.data || res.data).map((t) => ({
+  ...t,
+  completed: !!t.completed_at   // 🔥 IMPORTANT
+}));
+
+setTodos(normalized);
     } catch (err) {
       setApiError("Failed to load Todo");
     } finally {
@@ -217,62 +231,58 @@ function App() {
           <Route
             path="/"
             element={
-           
-                <div className="app">
-                  <main className="container">
-                    <h1>My Todo List</h1>
-                    <TodoInput
-                      todo={todo}
-                      setTodo={setTodo}
-                      addTodo={addTodo}
-                      category={category}
-                      setCategory={setCategory}
-                      error={error}
-                      addLoading={addloading}
+              <div className="app">
+                <main className="container">
+                  <h1>My Todo List</h1>
+                  <TodoInput
+                    todo={todo}
+                    setTodo={setTodo}
+                    addTodo={addTodo}
+                    category={category}
+                    setCategory={setCategory}
+                    error={error}
+                    addLoading={addloading}
+                  />
+                  <div className="filters">
+                    <input
+                      value={search}
+                      onChange={(e) => {
+                        setSearch(e.target.value);
+                      }}
+                      className="searchInput"
+                      type="text"
+                      placeholder="Search task"
                     />
-                    <div className="filters">
-                      <input
-                        value={search}
-                        onChange={(e) => {
-                          setSearch(e.target.value);
-                        }}
-                        className="searchInput"
-                        type="text"
-                        placeholder="Search task"
-                      />
-                      <button onClick={() => setFilter("all")}>All</button>
-                      <button onClick={() => setFilter("active")}>
-                        Active
-                      </button>
-                      <button onClick={() => setFilter("completed")}>
-                        Completed
-                      </button>
-                    </div>
+                    <button onClick={() => setFilter("all")}>All</button>
+                    <button onClick={() => setFilter("active")}>Active</button>
+                    <button onClick={() => setFilter("completed")}>
+                      Completed
+                    </button>
+                  </div>
 
-                    <div className="todo-section">
-                      {fetchloading && <p>Fetching todos...</p>}
-                      {deleteloading && <p>Deleting...</p>}
-                      {apiError && <p style={{ color: "red" }}>{apiError}</p>}
-                      <select
-                        className="category-filter"
-                        value={categoryFilter}
-                        onChange={(e) => setCategoryFilter(e.target.value)}
-                      >
-                        {categories.map((cat, index) => (
-                          <option key={index} value={cat}>
-                            {cat}
-                          </option>
-                        ))}
-                      </select>
-                      <TodoList
-                        todos={showTodo}
-                        deleteTodo={deleteTodo}
-                        toggleTodo={toggleTodo}
-                      />
-                    </div>
-                  </main>
-                </div>
-            
+                  <div className="todo-section">
+                    {fetchloading && <p>Fetching todos...</p>}
+                    {deleteloading && <p>Deleting...</p>}
+                    {apiError && <p style={{ color: "red" }}>{apiError}</p>}
+                    <select
+                      className="category-filter"
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                    >
+                      {categories.map((cat, index) => (
+                        <option key={index} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                    <TodoList
+                      todos={showTodo}
+                      deleteTodo={deleteTodo}
+                      toggleTodo={toggleTodo}
+                    />
+                  </div>
+                </main>
+              </div>
             }
           />
         </Routes>
