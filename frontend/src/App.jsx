@@ -126,7 +126,7 @@ setTodos((prev) =>
     t._id === id
       ? {
           ...res.data,
-          completed: !!res.data.completed_at   // 🔥 fix
+          completed: !!res.data.completed_at   
         }
       : t
   )
@@ -185,7 +185,7 @@ setTodos((prev) =>
 
 const normalized = (res.data.data || res.data).map((t) => ({
   ...t,
-  completed: !!t.completed_at   // 🔥 IMPORTANT
+  completed: !!t.completed_at   
 }));
 
 setTodos(normalized);
