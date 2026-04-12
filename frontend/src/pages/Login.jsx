@@ -19,14 +19,14 @@ function Login() {
 
       const token = res.data.token;
       localStorage.setItem("token", token);
+       localStorage.removeItem("guestTodos"); 
 
-      alert("Login successful ✅");
-
-      navigate("/");
+      window.location.href = "/";
        
     } catch (err) {
       alert("Login failed ❌");
     }
+   
   };
 
   return (
