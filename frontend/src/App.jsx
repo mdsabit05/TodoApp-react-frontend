@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState , useCallback } from "react";
 import "./App.css";
 import { useMemo } from "react";
 import Navbar from "./components/Navbar";
@@ -8,6 +8,13 @@ import { API } from "./API";
 import Login from "./pages/Login";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Register from "./pages/Register";
+import Home from "./pages/Home";
+import { Navigate } from "react-router-dom";
+
+const PrivateRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+  return token ? children : <Navigate to="/login" />;
+};
 
 function App() {
   const [todo, setTodo] = useState("");
@@ -29,6 +36,8 @@ function App() {
     category: false,
   });
   const [apiError, setApiError] = useState("");
+
+
 
   const addTodo = async () => {
     setaddLoading(true);
@@ -54,29 +63,7 @@ function App() {
     const token = localStorage.getItem("token");
 
     try {
-      if (!token) {
-        // guest
-        const newTodo = {
-          _id: Date.now(),
-          text: todo,
-          completed: false,
-          category: category.toLowerCase(),
-        };
-
-        const guestTodos = JSON.parse(localStorage.getItem("guestTodos")) || [];
-
-        const updated = [...guestTodos, newTodo];
-
-        localStorage.setItem("guestTodos", JSON.stringify(updated));
-
-        setTodos(updated);
-        setTodo("");
-        setCategory("general");
-
-        setError({ todo: false, category: false });
-        return;
-      }
-
+   
       const res = await API.post("/api/todos", {
         //login
         text: todo,
@@ -96,26 +83,9 @@ function App() {
     }
   };
 
-  const isValidMongoId = (id) => {
-    return typeof id === "string" && id.length === 24;
-  };
 
   const toggleTodo = async (id, checked) => {
-    const token = localStorage.getItem("token");
 
-    if (!token || !isValidMongoId(id)) {
-      console.log("Guest toggle:", id);
-
-      const guestTodos = JSON.parse(localStorage.getItem("guestTodos")) || [];
-
-      const updated = guestTodos.map((t) =>
-        String(t._id) === String(id) ? { ...t, completed: checked } : t,
-      );
-
-      localStorage.setItem("guestTodos", JSON.stringify(updated));
-      setTodos(updated);
-      return;
-    }
 
     try {
       const res = await API.put(`/api/todos/${id}/toggle`, {
@@ -126,7 +96,7 @@ setTodos((prev) =>
     t._id === id
       ? {
           ...res.data,
-          completed: !!res.data.completed_at   
+          completed: !!res.data.completed_at  
         }
       : t
   )
@@ -142,16 +112,6 @@ setTodos((prev) =>
     const token = localStorage.getItem("token");
 
     try {
-      if (!token) {
-        // guest
-        const guestTodos = JSON.parse(localStorage.getItem("guestTodos")) || [];
-
-        const updated = guestTodos.filter((todo) => todo._id !== id);
-
-        localStorage.setItem("guestTodos", JSON.stringify(updated));
-        setTodos(updated);
-        return;
-      }
 
       await API.delete(`/api/todos/${id}`); //login
       setTodos(todos.filter((todo) => todo._id !== id));
@@ -173,19 +133,11 @@ setTodos((prev) =>
     const token = localStorage.getItem("token");
 
     try {
-      if (!token) {
-        //guest
-        const guestTodos = JSON.parse(localStorage.getItem("guestTodos")) || [];
-
-        setTodos(guestTodos);
-        return;
-      }
-
       const res = await API.get("/api/todos");
 
 const normalized = (res.data.data || res.data).map((t) => ({
   ...t,
-  completed: !!t.completed_at   
+  completed: !!t.completed_at  
 }));
 
 setTodos(normalized);
@@ -224,67 +176,40 @@ setTodos(normalized);
   return (
     <>
       <BrowserRouter>
-        <Navbar />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route
-            path="/"
-            element={
-              <div className="app">
-                <main className="container">
-                  <h1>My Todo List</h1>
-                  <TodoInput
-                    todo={todo}
-                    setTodo={setTodo}
-                    addTodo={addTodo}
-                    category={category}
-                    setCategory={setCategory}
-                    error={error}
-                    addLoading={addloading}
-                  />
-                  <div className="filters">
-                    <input
-                      value={search}
-                      onChange={(e) => {
-                        setSearch(e.target.value);
-                      }}
-                      className="searchInput"
-                      type="text"
-                      placeholder="Search task"
-                    />
-                    <button onClick={() => setFilter("all")}>All</button>
-                    <button onClick={() => setFilter("active")}>Active</button>
-                    <button onClick={() => setFilter("completed")}>
-                      Completed
-                    </button>
-                  </div>
-
-                  <div className="todo-section">
-                    {fetchloading && <p>Fetching todos...</p>}
-                    {deleteloading && <p>Deleting...</p>}
-                    {apiError && <p style={{ color: "red" }}>{apiError}</p>}
-                    <select
-                      className="category-filter"
-                      value={categoryFilter}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
-                    >
-                      {categories.map((cat, index) => (
-                        <option key={index} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
-                    <TodoList
-                      todos={showTodo}
-                      deleteTodo={deleteTodo}
-                      toggleTodo={toggleTodo}
-                    />
-                  </div>
-                </main>
-              </div>
-            }
-          />
+         <Route
+  path="/"
+  element={
+    <PrivateRoute>
+      <>
+        <Navbar />
+        <Home
+          todo={todo}
+          setTodo={setTodo}
+          addTodo={addTodo}
+          category={category}
+          setCategory={setCategory}
+          error={error}
+          addloading={addloading}
+          search={search}
+          setSearch={setSearch}
+          setFilter={setFilter}
+          fetchloading={fetchloading}
+          deleteloading={deleteloading}
+          apiError={apiError}
+          categoryFilter={categoryFilter}
+          setCategoryFilter={setCategoryFilter}
+          categories={categories}
+          showTodo={showTodo}
+          deleteTodo={deleteTodo}
+          toggleTodo={toggleTodo}
+        />
+      </>
+    </PrivateRoute>
+  }
+/>
         </Routes>
       </BrowserRouter>
     </>
