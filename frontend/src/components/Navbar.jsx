@@ -7,7 +7,6 @@ const Navbar = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("guestTodos"); 
      window.location.reload();
-    // navigate("/"); 
   };
   const isLoggedIn = !!localStorage.getItem("token");
   return (
