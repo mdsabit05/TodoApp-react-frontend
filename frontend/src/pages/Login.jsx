@@ -1,17 +1,27 @@
 import { useState } from "react";
 import { API } from "../API";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    window.location.href = "/";
+  }
+}, []);
+
   const login = async () => {
     try {
+      setLoading(true);
       const res = await API.post("/api/auth/login", {
         email,
         password,
@@ -25,7 +35,10 @@ function Login() {
        
     } catch (err) {
       alert("Login failed ❌");
+    } finally {
+      setLoading(false)
     }
+
    
   };
 
@@ -49,10 +62,9 @@ function Login() {
           onChange={(e) => setPassword(e.target.value)}
           style={styles.input}
         />
-
-        <button onClick={login} style={styles.button}>
-          Login
-        </button>
+       <button onClick={login} style={styles.button} disabled={loading}>
+  {loading ? "Logging in..." : "Login"}
+</button>
          <p>
           Don't have account?{" "}
           <span style={styles.span} onClick={() => navigate("/Register")}>Register</span>
@@ -63,6 +75,8 @@ function Login() {
 }
 
 export default Login;
+
+
 
 const styles = {
   container: {

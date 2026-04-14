@@ -19,8 +19,6 @@ const Register = () => {
         email,
         password,
       });
-
-      alert("Registered Successfully ✅");
       navigate("/login");
 
     } catch (err) {
